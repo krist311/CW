@@ -11,10 +11,10 @@ class CliqueSeparator:
         self.graph_filled = graph.copy()
         self.n = graph.number_of_nodes()
         self.l = [1] * self.n  # associated vertex number
-        self.alpha = [-1] * self.n
+        self.alpha = [-1] * self.n  # ordering
         self.k = 1
         self.atoms = []
-        self.separated = []
+        self.separated = []  # used for coloring, contains arrays of AC, BC, C
         self.unnumbered = list(range(self.n))  # set of vertex names which hasn't number yet
 
     def lexM(self):
@@ -38,7 +38,6 @@ class CliqueSeparator:
                 self.l[w] += 0.5
             self.search(reach, reached, u)
             self.sort()
-        #print(self.alpha)
         return sorted(range(self.n), key=lambda x: self.alpha[x])  # returns minimal ordering of vertexes
 
     def search(self, reach, reached, u):
@@ -72,12 +71,13 @@ class CliqueSeparator:
                     atom = self.graph.copy()
                     atom.remove_nodes_from([v for v in range(self.n) if v not in A and v not in c])
                     self.atoms.append(atom)
-                    bc_graph = self.graph.copy()
-                    bc_graph.remove_nodes_from([v for v in range(self.n) if v not in B_and_C])
+                    # uncomment for coloring
+                    # bc_graph = self.graph.copy()
+                    # bc_graph.remove_nodes_from([v for v in range(self.n) if v not in B_and_C])
                     graph_filled_copy = graph_filled.copy()
                     graph_filled_copy.remove_nodes_from(A)
 
-                    self.separated.append([atom, bc_graph, c])
+                    # self.separated.append([atom, bc_graph, c])
                     self.separate(B_and_C, graph_filled_copy)
                     return
         atom = self.graph.copy()
@@ -92,7 +92,6 @@ class CliqueSeparator:
         return True
 
     def find_max_clique(self):
-        self.separate(self.lexM(), self.graph_filled)
         current_max_clique_size = 1
         current_max_clique = []
         for atom in sorted(self.atoms, key=lambda x: len(x.nodes()), reverse=True):
@@ -181,27 +180,12 @@ class Utils:
 
 
 if __name__ == "__main__":
-    # G = nx.Graph()
-    # edges = [(0, 1), (0, 2), (1, 2), (1, 4), (3, 5), (3, 6), (5, 6), (5, 8), (3, 7), (4, 7),
-    #         (7, 8), (6, 8), (1, 5), (1, 3)]
-    # edges = [(0, 2), (0, 5), (0, 3), (1, 2), (1, 6), (2, 3), (2, 5), (2, 7), (3, 5), (3, 8), (3, 4), (4, 9), (5, 10),
-    #        (6, 7), (7, 10), (8, 9), (8, 10)]
-    # G.add_edges_from(edges)
-    G = Utils.read_dimax("./graphs/johnson8-4-4.clq.txt")
-    start_time = time.time()
-    nxclique.max_clique(G)
-    elapsed_time = time.time() - start_time
-    print(elapsed_time)
-    start_time = time.time()
+    G = Utils.read_dimax("./graphs/hamming10-2.clq.txt")
     clique_separator = CliqueSeparator(G)
-    clique_separator.find_max_clique();
-    #clique_separator.separate(clique_separator.lexM(), clique_separator.graph_filled)
-    # print(clique_separator.min_coloring())
+
+    # counting decomposition time
+    start_time = time.time()
+    clique_separator.separate(clique_separator.lexM(), clique_separator.graph_filled)
     elapsed_time = time.time() - start_time
     print(elapsed_time)
-
-
-    # print(clique_separator.possible_cliques)
-
-
-    # print(clique_separator.find_max_clique())
+    print(len(clique_separator.atoms) - 1)
